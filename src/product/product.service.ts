@@ -4,6 +4,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
+import { userPayloadType } from 'src/common/types/auth.types';
 
 @Injectable()
 export class ProductService {
@@ -11,17 +12,36 @@ export class ProductService {
     @InjectRepository(Product) private productRepository: Repository<Product>,
   ) {}
 
-  create(createProductDto: CreateProductDto) {
-    const product = this.productRepository.create(createProductDto);
+  create(createProductDto: CreateProductDto, user: userPayloadType) {
+    const newProduct = {
+      ...createProductDto,
+      createdBy: user.id, 
+    }
+    const product = this.productRepository.create(newProduct);
     return this.productRepository.save(product);
   }
 
-  findAll() {
-    return this.productRepository.find();
+  async findAll(userId: number, page: number = 1, limit: number = 10) {
+    const [data, totalCount] = await this.productRepository.findAndCount({
+      where: { userId: userId },
+      take: limit,
+      skip: (page - 1) * limit
+    });
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      data,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    };
   }
 
-  findOne(id: number) {
-    return this.productRepository.findOneBy({ id });
+  findOne(id: number, userId: number) {
+    return this.productRepository.findOne({
+      where: { id, userId }
+    })
   }
 
   update(id: number, updateProductDto: UpdateProductDto) {

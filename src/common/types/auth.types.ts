@@ -3,6 +3,12 @@ export type loginResponseType = {
     role: string;
 }
 
+export type userPayloadType = {
+    id: string;
+    email: string;
+    role: string;
+}
+
 // export enum UserRole {
 //     USER = 'user',
 //     ADMIN = 'admin',
