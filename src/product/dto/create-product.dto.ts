@@ -10,11 +10,11 @@ export class CreateProductDto {
     @IsString()
     description: string;   
 
-    @ApiProperty({ example: 100.00 }) 
+    @ApiProperty({ example: 100 })
+    @IsNumber()
     price: number;
 
     @ApiProperty({ example: 10 })
     @IsNumber()
     quantity: number;
-
 }

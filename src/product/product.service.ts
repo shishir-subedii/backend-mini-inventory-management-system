@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,18 +10,19 @@ import { userPayloadType } from 'src/common/types/auth.types';
 export class ProductService {
   constructor(
     @InjectRepository(Product) private productRepository: Repository<Product>,
-  ) {}
+  ) { }
 
-  create(createProductDto: CreateProductDto, user: userPayloadType) {
+  async create(createProductDto: CreateProductDto, user: userPayloadType) {
+
     const newProduct = {
       ...createProductDto,
-      createdBy: user.id, 
+      userId: user.id
     }
     const product = this.productRepository.create(newProduct);
-    return this.productRepository.save(product);
+    return await this.productRepository.save(product);
   }
 
-  async findAll(userId: number, page: number = 1, limit: number = 10) {
+  async findAll(userId: string, page: number = 1, limit: number = 10) {
     const [data, totalCount] = await this.productRepository.findAndCount({
       where: { userId: userId },
       take: limit,
@@ -38,17 +39,41 @@ export class ProductService {
     };
   }
 
-  findOne(id: number, userId: number) {
-    return this.productRepository.findOne({
+  async findOne(id: string, userId: string) {
+    return await this.productRepository.findOne({
       where: { id, userId }
     })
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return this.productRepository.update(id, updateProductDto);
+  async update(id: string, userId: string, updateProductDto: UpdateProductDto) {
+    const product = await this.productRepository.findOne({ where: { id, userId } });
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    return this.productRepository.update({ id, userId }, updateProductDto);
   }
 
-  remove(id: number) {
-    return this.productRepository.delete(id);
+  async remove(id: string, userId: string) {
+    const product = await this.productRepository.findOne({ where: { id, userId } });
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    return this.productRepository.delete({ id, userId });
+  }
+
+  async addQuantity(id: string, userId: string, quantity: number) {
+    const product = await this.productRepository.findOne({ where: { id, userId } });
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    return await this.productRepository.increment({ id, userId }, 'quantity', quantity);
+  }
+
+  async reduceQuantity(id: string, userId: string, quantity: number) {
+    const product = await this.productRepository.findOne({ where: { id, userId } });
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    return await this.productRepository.decrement({ id, userId }, 'quantity', quantity);
   }
 }

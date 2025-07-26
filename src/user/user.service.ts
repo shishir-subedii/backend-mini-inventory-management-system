@@ -34,7 +34,7 @@ export class UserService {
         return this.usersRepository.find();
     }
 
-    async findOneById(id: number) {
+    async findOneById(id: string) {
         return this.usersRepository.findOne({ where: { id } });
     }
 
