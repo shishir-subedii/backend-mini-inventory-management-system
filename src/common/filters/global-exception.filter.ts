@@ -29,7 +29,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             statusCode: status,
             path: request.url,
             timestamp: new Date().toISOString(),
-            message,
+            message: typeof message === 'string' ? message : (message as any).message || 'An error occurred',
+            data: null,
         });
     }
 }
